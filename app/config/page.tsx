@@ -10,9 +10,8 @@ import {
   getCurrentSeason,
   isPeakMonth,
 } from "@/lib/energy-rules-config";
-import { GLOSSARY } from "@/lib/glossary";
 import { DNSP_LIST, MONTH_NAMES } from "@/lib/dnsp-plans";
-import { InfoIcon, HelpText, WarningText, GlossaryTerm } from "@/components/Tooltip";
+import { InfoIcon, HelpText, WarningText } from "@/components/Tooltip";
 
 export default function ConfigPage() {
   const [config, setConfig] = useState<EnergyAutomationConfig>(defaultEnergyConfig);
@@ -151,40 +150,68 @@ export default function ConfigPage() {
                     className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    EV Battery Capacity (kWh)
-                  </label>
+              </div>
+
+              {/* EV toggle */}
+              <div className="border-t border-white/10 pt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
                   <input
-                    type="number"
-                    step="1"
-                    value={config.system.evBatteryCapacityKwh}
+                    type="checkbox"
+                    checked={config.system.hasEV}
                     onChange={(e) =>
                       setConfig({
                         ...config,
-                        system: { ...config.system, evBatteryCapacityKwh: Number(e.target.value) },
+                        system: { ...config.system, hasEV: e.target.checked },
                       })
                     }
-                    className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                    className="w-5 h-5 rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Zappi Charge Rate (kW)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={config.system.zappiChargeRateKw}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        system: { ...config.system, zappiChargeRateKw: Number(e.target.value) },
-                      })
-                    }
-                    className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                  />
-                </div>
+                  <div>
+                    <span className="text-white font-medium">I have an electric vehicle</span>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      Enables EV charging settings and shows EV-related automation options.
+                    </p>
+                  </div>
+                </label>
+
+                {config.system.hasEV && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        EV Battery Capacity (kWh)
+                      </label>
+                      <input
+                        type="number"
+                        step="1"
+                        value={config.system.evBatteryCapacityKwh}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            system: { ...config.system, evBatteryCapacityKwh: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        Zappi Charge Rate (kW)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={config.system.zappiChargeRateKw}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            system: { ...config.system, zappiChargeRateKw: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -641,6 +668,7 @@ export default function ConfigPage() {
                   </p>
                   <DiversionPriorityList
                     priority={config.avoidNegativeFeedIn.diversionPriority}
+                    hasEV={config.system.hasEV}
                     onChange={(priority) =>
                       setConfig({
                         ...config,
@@ -669,13 +697,13 @@ export default function ConfigPage() {
                   />
                   <span className="flex items-center gap-1.5 text-sm text-white/70">
                     Reduce solar output if batteries are full
-                    <InfoIcon tooltip="Last resort: if both Powerwall and EV are full and prices are still negative, the inverter will throttle solar production to avoid paying to export. Rarely needed." />
+                    <InfoIcon tooltip="Last resort: if the Powerwall is full and prices are still negative, the inverter will throttle solar production to avoid paying to export. Rarely needed." />
                   </span>
                 </label>
               </div>
             </RuleCard>
 
-            {/* 5: Get Paid to Charge */}
+            {/* 5: Get Paid to Charge (always visible) / 6: Smart Car Charging (EV only) */}
             <RuleCard
               number={5}
               title="Get Paid to Charge"
@@ -715,26 +743,28 @@ export default function ConfigPage() {
                     <InfoIcon tooltip="Normally the Powerwall charges to your daily target (e.g. 90%). During negative prices, top it up completely so you have maximum capacity to sell during the next price spike." />
                   </span>
                 </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.getPaidToCharge.chargeEVTo100}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        getPaidToCharge: {
-                          ...config.getPaidToCharge,
-                          chargeEVTo100: e.target.checked,
-                        },
-                      })
-                    }
-                    className="w-4 h-4 rounded border-white/20 bg-white/10"
-                  />
-                  <span className="flex items-center gap-1.5 text-sm text-white/70">
-                    Fill the EV to 100%
-                    <InfoIcon tooltip="Charge your EV for free (or better — get paid to charge it). Only applies if your Zappi is connected and the car is plugged in." />
-                  </span>
-                </label>
+                {config.system.hasEV && (
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.getPaidToCharge.chargeEVTo100}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          getPaidToCharge: {
+                            ...config.getPaidToCharge,
+                            chargeEVTo100: e.target.checked,
+                          },
+                        })
+                      }
+                      className="w-4 h-4 rounded border-white/20 bg-white/10"
+                    />
+                    <span className="flex items-center gap-1.5 text-sm text-white/70">
+                      Fill the EV to 100%
+                      <InfoIcon tooltip="Charge your EV for free (or better — get paid to charge it). Only applies if your Zappi is connected and the car is plugged in." />
+                    </span>
+                  </label>
+                )}
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -783,130 +813,78 @@ export default function ConfigPage() {
             </RuleCard>
 
             {/* 6: Smart Car Charging */}
-            <RuleCard
-              number={6}
-              title="Smart Car Charging"
-              enabled={config.smartCarCharging.enabled}
-              onToggle={(enabled) =>
-                setConfig({
-                  ...config,
-                  smartCarCharging: { ...config.smartCarCharging, enabled },
-                })
-              }
-            >
-              <div className="space-y-4">
-                <HelpText>
-                  The lower your EV battery, the more urgent charging becomes. Each tier has a price
-                  ceiling — the maximum you're willing to pay to charge at that urgency level.{" "}
-                  <InfoIcon tooltip="Your public charger cost is the reference point. Any grid rate below that is cheaper than stopping at a public charger, so it's worth doing." />
-                </HelpText>
-
-                {/* Public charger reference */}
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-sm text-white/60">
-                    Public charger reference cost
-                    <InfoIcon tooltip="The typical cost per kWh at a public fast charger. Used as a benchmark — any home charging rate below this is saving you money vs. charging on the road." />
-                  </label>
-                  <div className="flex items-center gap-2">
+            {config.system.hasEV && (
+              <RuleCard
+                number={6}
+                title="Smart Car Charging"
+                enabled={config.smartCarCharging.enabled}
+                onToggle={(enabled) =>
+                  setConfig({
+                    ...config,
+                    smartCarCharging: { ...config.smartCarCharging, enabled },
+                  })
+                }
+              >
+                <div className="space-y-3">
+                  <p className="text-sm text-white/60">
+                    Charge the EV based on urgency — the lower the battery, the more you&apos;re willing to pay.{" "}
+                    <InfoIcon tooltip="Instead of a fixed schedule, this adjusts the maximum price you'll pay based on how urgent the charge is. An empty car charges at almost any price; a nearly-full car waits for cheap solar." />
+                  </p>
+                  <div className="space-y-2">
+                    {config.smartCarCharging.tiers.map((tier) => (
+                      <div
+                        key={tier.level}
+                        className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                      >
+                        <span className="w-16 text-xs text-white/40 shrink-0 tabular-nums">
+                          {tier.socMin}–{tier.socMax}%
+                        </span>
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded shrink-0 ${
+                            tier.level === "CRITICAL"
+                              ? "bg-red-500/20 text-red-300"
+                              : tier.level === "LOW"
+                              ? "bg-amber-500/20 text-amber-300"
+                              : tier.level === "BELOW_TARGET"
+                              ? "bg-yellow-500/20 text-yellow-300"
+                              : tier.level === "TARGET_RANGE"
+                              ? "bg-sky-500/20 text-sky-300"
+                              : "bg-white/10 text-white/40"
+                          }`}
+                        >
+                          {tier.level.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-white/60 flex-1">{tier.behaviour}</span>
+                        <span className="text-xs text-white/30 shrink-0">
+                          {tier.priceCeiling !== null ? `≤ ${tier.priceCeiling}¢` : "Solar only"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={config.smartCarCharging.publicChargerCostReference}
+                      type="checkbox"
+                      checked={config.smartCarCharging.respectDemandWindow}
                       onChange={(e) =>
                         setConfig({
                           ...config,
                           smartCarCharging: {
                             ...config.smartCarCharging,
-                            publicChargerCostReference: Number(e.target.value),
+                            respectDemandWindow: e.target.checked,
                           },
                         })
                       }
-                      className="w-20 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-white text-sm text-right focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                      className="w-4 h-4 rounded border-white/20 bg-white/10"
                     />
-                    <span className="text-sm text-white/40">¢/kWh</span>
-                  </div>
+                    <span className="flex items-center gap-1.5 text-sm text-white/70">
+                      No EV charging during demand window
+                      <InfoIcon tooltip="Prevents the Zappi from drawing grid power during the demand window — even if the car battery is critical. The Powerwall always takes priority." />
+                    </span>
+                  </label>
                 </div>
+              </RuleCard>
+            )}
 
-                {/* Tier table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-xs uppercase tracking-widest text-white/30 border-b border-white/10">
-                        <th className="text-left py-2">
-                          <GlossaryTerm term="Battery Level" definition={GLOSSARY.soc.explanation}>
-                            EV Battery
-                          </GlossaryTerm>
-                        </th>
-                        <th className="text-left py-2">Urgency</th>
-                        <th className="text-left py-2 hidden sm:table-cell">Behaviour</th>
-                        <th className="text-right py-2">
-                          <span className="flex items-center justify-end gap-1">
-                            Price ceiling
-                            <InfoIcon tooltip="Maximum grid price you'll accept for charging at this urgency level. Null means solar-only — no grid charging at all." />
-                          </span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {config.smartCarCharging.tiers.map((tier, i) => (
-                        <tr key={i} className="border-b border-white/5">
-                          <td className="py-2 text-white/70 whitespace-nowrap">
-                            {tier.socMin}–{tier.socMax}%
-                          </td>
-                          <td className="py-2">
-                            <span
-                              className={`text-xs font-medium ${
-                                tier.level === "CRITICAL"
-                                  ? "text-red-400"
-                                  : tier.level === "LOW"
-                                  ? "text-amber-400"
-                                  : tier.level === "FULL"
-                                  ? "text-emerald-400"
-                                  : "text-white/50"
-                              }`}
-                            >
-                              {tier.level.replace("_", " ")}
-                            </span>
-                          </td>
-                          <td className="py-2 text-white/50 text-xs hidden sm:table-cell">
-                            {tier.behaviour}
-                          </td>
-                          <td className="py-2 text-right">
-                            {tier.priceCeiling !== null ? (
-                              <div className="flex items-center justify-end gap-1.5">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  step={1}
-                                  value={tier.priceCeiling}
-                                  onChange={(e) => {
-                                    const tiers = config.smartCarCharging.tiers.map((t, j) =>
-                                      j === i ? { ...t, priceCeiling: Number(e.target.value) } : t
-                                    );
-                                    setConfig({
-                                      ...config,
-                                      smartCarCharging: {
-                                        ...config.smartCarCharging,
-                                        tiers,
-                                      },
-                                    });
-                                  }}
-                                  className="w-16 rounded border border-white/20 bg-white/10 px-2 py-1 text-white text-xs text-right focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
-                                />
-                                <span className="text-white/40 text-xs">¢</span>
-                              </div>
-                            ) : (
-                              <span className="text-white/30 text-xs">Solar only</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </RuleCard>
           </div>
         )}
 
@@ -943,10 +921,12 @@ export default function ConfigPage() {
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
               <h3 className="text-sm font-semibold text-amber-300 mb-2">⚠️ Integration Dependencies</h3>
               <ul className="space-y-1 text-sm text-amber-300/80">
-                <li>• <strong>Solcast</strong>: Required for Rules 7 (Overnight Charging) and 9 (Cloudy Day Detection)</li>
-                <li>• <strong>Weather Forecast</strong>: Required for Rule 7 (Overnight Charging)</li>
-                <li>• <strong>Zappi API</strong>: Required for Rules 4 (EV Charging) and 5 (Excess Solar to EV)</li>
-                <li>• <strong>Amber Forecast</strong>: Used by all price-dependent rules</li>
+                <li>• <strong>Solcast</strong>: Required for Overnight Charging and Cloudy Day Detection</li>
+                <li>• <strong>Weather Forecast</strong>: Required for Overnight Charging</li>
+                <li>• <strong>Amber Forecast</strong>: Used by all price-dependent settings</li>
+                {config.system.hasEV && (
+                  <li>• <strong>Zappi API</strong>: Required for Smart Car Charging and EV diversion</li>
+                )}
               </ul>
             </div>
           </div>
@@ -1041,27 +1021,38 @@ const DIVERSION_META: Record<DiversionItem, { label: string; description: string
 
 function DiversionPriorityList({
   priority,
+  hasEV,
   onChange,
 }: {
   priority: DiversionItem[];
+  hasEV: boolean;
   onChange: (priority: DiversionItem[]) => void;
 }) {
+  const visible = hasEV ? priority : priority.filter((item) => item !== "EV");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
   function handleDrop(targetIndex: number) {
     if (dragIndex === null || dragIndex === targetIndex) return;
-    const next = [...priority];
+    const next = [...visible];
     const [moved] = next.splice(dragIndex, 1);
     next.splice(targetIndex, 0, moved);
-    onChange(next);
+    if (hasEV) {
+      onChange(next);
+    } else {
+      // Reinsert EV at its original position in the full priority array
+      const evIndex = priority.indexOf("EV");
+      const merged = [...next];
+      if (evIndex !== -1) merged.splice(evIndex, 0, "EV");
+      onChange(merged);
+    }
     setDragIndex(null);
     setOverIndex(null);
   }
 
   return (
     <ol className="space-y-1.5">
-      {priority.map((item, i) => {
+      {visible.map((item, i) => {
         const meta = DIVERSION_META[item];
         const isOver = overIndex === i && dragIndex !== i;
         return (

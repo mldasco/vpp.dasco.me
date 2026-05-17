@@ -183,6 +183,7 @@ export interface EnergyAutomationConfig {
     powerwallChargeRateKw: number;   // default: 5
     powerwallDischargeRateKw: number;
     solarPeakKw: number;             // default: 5
+    hasEV: boolean;                  // enables all EV-related settings in the UI
     evBatteryCapacityKwh: number;    // default: 100 (Polestar 4)
     zappiChargeRateKw: number;       // default: 7.4
     tariff: string;                  // "Amber Electric"
@@ -399,6 +400,7 @@ export const defaultEnergyConfig: EnergyAutomationConfig = {
     powerwallChargeRateKw: 5,
     powerwallDischargeRateKw: 5,
     solarPeakKw: 5,
+    hasEV: false,
     evBatteryCapacityKwh: 100,
     zappiChargeRateKw: 7.4,
     tariff: "Amber Electric",
