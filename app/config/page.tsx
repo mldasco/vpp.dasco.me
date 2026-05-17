@@ -915,25 +915,6 @@ export default function ConfigPage() {
           <div className="space-y-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-4">
               <h2 className="text-sm font-medium text-white/50 uppercase tracking-widest">
-                Decision Priority Order
-              </h2>
-              <p className="text-sm text-white/60">
-                When multiple automation settings conflict, they are applied in this order (highest priority first):
-              </p>
-              <ol className="space-y-2">
-                {config.decisionPriorityOrder.settings.map((setting, i) => (
-                  <li key={setting} className="flex items-center gap-3 text-sm">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">
-                      {i + 1}
-                    </span>
-                    <span className="text-white/70">{setting.replace(/_/g, " ")}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-4">
-              <h2 className="text-sm font-medium text-white/50 uppercase tracking-widest">
                 Logging & Debugging
               </h2>
               <div>

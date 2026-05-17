@@ -1,0 +1,13 @@
+# Normalise all text files to LF on commit (Linux/Mac compatible deploys)
+* text=auto eol=lf
+
+# Explicitly binary — never touch line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
